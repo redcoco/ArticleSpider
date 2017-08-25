@@ -4,8 +4,8 @@ import scrapy
 
 class JobboleSpider(scrapy.Spider):
     name = 'jobbole'
-    allowed_domains = ['jobbole.com']
-    start_urls = ['http://jobbole.com/']
+    allowed_domains = ['blog.jobbole.com']
+    start_urls = ['http://blog.jobbole.com/']
 
     def parse(self, response):
         pass
