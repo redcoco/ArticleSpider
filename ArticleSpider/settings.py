@@ -75,6 +75,7 @@ ITEM_PIPELINES = {
     'ArticleSpider.pipelines.JobboleImagesPipeline':1,
     'ArticleSpider.pipelines.JsonFilePipeline':2,
     'ArticleSpider.pipelines.JsonExporterPipeline':3,
+    # 'ArticleSpider.pipelines.MysqlPipeline':4,
 
 }
 IMAGES_URLS_FIELD="front_image_url"
@@ -103,3 +104,11 @@ IMAGES_STORE=os.path.join(project_dir,"images")
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+
+#MYSQL配置
+MYSQL_HOST = "192.168.0.1"
+MYSQL_DBNAME = "test"
+MYSQL_USER = "root"
+MYSQL_PASSWORD = "toor"
+
