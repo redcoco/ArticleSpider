@@ -5,12 +5,12 @@ from scrapy.http import Request
 from urllib import parse
 from ArticleSpider.items import JobboleItem
 from ArticleSpider.utils.common import get_md5
-
+import datetime
 
 class JobboleSpider(scrapy.Spider):
     name = 'jobbole'
     allowed_domains = ['blog.jobbole.com']
-    start_urls = ['http://blog.jobbole.com/all-posts/']
+    start_urls = ['http://blog.jobbole.com/all-posts/page/550/']
 
     def parse(self, response):
 
@@ -57,7 +57,7 @@ class JobboleSpider(scrapy.Spider):
         front_image_url = response.meta.get("front_image_url", "")
         title = response.css('div.entry-header h1::text').extract_first()
         create_date = response.css('div.entry-meta p:nth-child(1)::text').extract()[0].strip().rstrip(' ·')
-        praise_num = response.css('div.post-adds span h10::text').extract()[0]
+        praise_num = response.css('div.post-adds span h10::text').extract_first()
         fav_nums = response.css('span[class*="bookmark-btn"]::text').extract()[0]
         match_re = re.match(".*?(\d+).*", fav_nums)
         if match_re:
@@ -77,10 +77,14 @@ class JobboleSpider(scrapy.Spider):
 
         # item设计
         jobbole_item["front_image_url"] = [front_image_url] # 后台解析IMAGES_URLS_FIELD 是一个数组，所以需要转数组
-        jobbole_item["front_image_path"] = get_md5(response.url)
+        # jobbole_item["front_image_path"] = 该字段在JobboleImagesPipeline 中定义的
         jobbole_item["url"] = response.url
-        # jobbole_item["url_object_id"] =
+        jobbole_item["url_object_id"] = get_md5(response.url)
         jobbole_item["title"] = title
+        try:
+            create_date = datetime.datetime.strftime(create_date,"%Y/%m/%d").date()
+        except Exception as e:
+            create_date = datetime.datetime.now().date()
         jobbole_item["create_date"] = create_date
         jobbole_item["praise_num"] = praise_num
         jobbole_item["fav_nums"] = fav_nums
