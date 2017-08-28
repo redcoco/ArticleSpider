@@ -6,6 +6,10 @@
 # http://doc.scrapy.org/en/latest/topics/items.html
 
 import scrapy
+from scrapy.loader.processors import MapCompose, TakeFirst, Join
+import datetime
+from scrapy.loader import ItemLoader
+import re
 
 
 class ArticlespiderItem(scrapy.Item):
@@ -14,18 +18,61 @@ class ArticlespiderItem(scrapy.Item):
     pass
 
 
+def date_cov(value):
+    try:
+        create_date = datetime.datetime.strptime(value, "%Y/%m/%d").date()
+    except Exception as e:
+        create_date = datetime.datetime.now().date()
+    return str(create_date)
+
+
+def get_nums(value):
+    match_re = re.match(".*?(\d+).*", value)
+    if match_re:
+        nums = int(match_re.group(1))
+    else:
+        nums = 0
+
+
+def remove_comment_tags(value):
+    if "评论" in value:
+        return ""
+    else:
+        return value
+
+
+def return_orgin(value):
+    return value
+
+
+class JobboleItemLoader(ItemLoader):
+    # 自定义itemloader
+    default_output_processor = TakeFirst()  # 所有的字段取第一个
+
+
 class JobboleItem(scrapy.Item):
     # items设计
-    front_image_url =scrapy.Field()
+    front_image_url = scrapy.Field(
+        output_processor=MapCompose(lambda x:x)
+    )
     front_image_path = scrapy.Field()
     url = scrapy.Field()
     url_object_id = scrapy.Field()
     title = scrapy.Field()
-    create_date = scrapy.Field()
-    praise_num = scrapy.Field()
-    fav_nums = scrapy.Field()
-    comment_nums = scrapy.Field()
+    create_date = scrapy.Field(
+        input_processor=MapCompose(date_cov)
+    )
+    praise_num = scrapy.Field(
+        input_processor=MapCompose(get_nums)
+    )
+    fav_nums = scrapy.Field(
+        input_processor=MapCompose(get_nums)
+    )
+    comment_nums = scrapy.Field(
+        input_processor=MapCompose(get_nums)
+    )
     content = scrapy.Field()
-    tags = scrapy.Field()
-
-    pass
+    tags = scrapy.Field(
+        input_processor=MapCompose(remove_comment_tags),
+        out_processor=Join(',')
+    )

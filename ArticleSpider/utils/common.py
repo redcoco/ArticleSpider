@@ -12,3 +12,4 @@ def get_md5(url):
 
 if __name__ == "__main__":
     print(get_md5("https://douban.com".encode("utf-8")))
+

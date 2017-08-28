@@ -13,6 +13,7 @@ import MySQLdb
 import MySQLdb.cursors
 from twisted.enterprise import adbapi
 
+
 class ArticlespiderPipeline(object):
     def process_item(self, item, spider):
         return item
@@ -22,7 +23,10 @@ class JobboleImagesPipeline(ImagesPipeline):
     def item_completed(self, results, item, info):
         if "front_image_url" in item:
             for ok, value in results:
-                image_file_path = value["path"]
+                if ok :
+                    image_file_path = value["path"]
+                else:
+                    image_file_path = ""
             item["front_image_path"] = image_file_path
 
         return item
@@ -74,35 +78,38 @@ class MysqlPipeline(object):
                     insert into jobbole () VALUES (%s,%s,%s,%s)
                     """
         self.cursor.execute(insert_sql, (
-        item["title"], item["create_date"], item["fav_nums"], item["content"], item["tags"], item["comment_nums"],
-        item["praise_num"], item["front_image_url"]))
+            item["title"], item["create_date"], item["fav_nums"], item["content"], item["tags"], item["comment_nums"],
+            item["praise_num"], item["front_image_url"]))
         self.conn.commit()
+
 
 class MysqlTwistedPipeline(object):
     """
     异步高并发插入mysql
     """
-    def __init__(self,dbpool):
+
+    def __init__(self, dbpool):
         self.dbpool = dbpool
+
     @classmethod
-    def from_settings(cls,settings):
+    def from_settings(cls, settings):
         dbparms = dict(
-            host =settings["MYSQL_HOST"],
-            db = settings["MYSQL_DBNAME"],
-            user = settings["MYSQL_USER"],
-            password = settings["MYSQL_PASSWORD"],
-            charset = 'utf-8',
-            cursorclass = MySQLdb.cursors.DictCursor,
-            use_unicode  = True,
+            host=settings["MYSQL_HOST"],
+            db=settings["MYSQL_DBNAME"],
+            user=settings["MYSQL_USER"],
+            password=settings["MYSQL_PASSWORD"],
+            charset='utf-8',
+            cursorclass=MySQLdb.cursors.DictCursor,
+            use_unicode=True,
         )
-        dbpool = adbapi.ConnectionPool("MySQLdb",**dbparms)
+        dbpool = adbapi.ConnectionPool("MySQLdb", **dbparms)
         return cls(dbpool)
 
     def process_item(self, item, spider):
-        query = self.dbpool.runInteraction(self.do_insert,item)
-        query.addErrback(self.handle_error,item,spider)
+        query = self.dbpool.runInteraction(self.do_insert, item)
+        query.addErrback(self.handle_error, item, spider)
 
-    def do_insert(self,cursor,item):
+    def do_insert(self, cursor, item):
         insert_sql = """
                             insert into jobbole () VALUES (%s,%s,%s,%s)
                             """
@@ -110,7 +117,6 @@ class MysqlTwistedPipeline(object):
             item["title"], item["create_date"], item["fav_nums"], item["content"], item["tags"], item["comment_nums"],
             item["praise_num"], item["front_image_url"]))
 
-    def handle_error(self,failure,item,spider):
+    def handle_error(self, failure, item, spider):
         # 处理异步插入语的异常
         print(failure)
-
