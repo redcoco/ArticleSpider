@@ -5,14 +5,17 @@ import re
 import json
 from urllib.parse import urljoin
 from scrapy.loader import ItemLoader
-from ArticleSpider.items import ZhihuAnswerItem,ZhihuQuestionItem
-import time
+from ArticleSpider.items import ZhihuAnswerItem, ZhihuQuestionItem
+import datetime
 
 
 class ZhihuSpider(scrapy.Spider):
     name = 'zhihu'
     allowed_domains = ['www.zhihu.com']
     start_urls = ['https://www.zhihu.com/']
+
+    # question的第一页answer的请求url
+    start_answer_url = "https://www.zhihu.com/api/v4/questions/{0}/answers?sort_by=default&include=data%5B%2A%5D.is_normal%2Cis_sticky%2Ccollapsed_by%2Csuggest_edit%2Ccomment_count%2Ccollapsed_counts%2Creviewing_comments_count%2Ccan_comment%2Ccontent%2Ceditable_content%2Cvoteup_count%2Creshipment_settings%2Ccomment_permission%2Cmark_infos%2Ccreated_time%2Cupdated_time%2Crelationship.is_author%2Cvoting%2Cis_thanked%2Cis_nothelp%2Cupvoted_followees%3Bdata%5B%2A%5D.author.is_blocking%2Cis_blocked%2Cis_followed%2Cvoteup_count%2Cmessage_thread_token%2Cbadge%5B%3F%28type%3Dbest_answerer%29%5D.topics&limit={1}&offset={2}"
 
     headers = {
         "HOST": "www.zhihu.com",
@@ -33,39 +36,74 @@ class ZhihuSpider(scrapy.Spider):
             if match_obj:
                 request_url = match_obj.group(1)
                 question_id = match_obj.group(2)
-                yield scrapy.Request(request_url, headers=self.headers, meta={"question_id":question_id},callback=self.parse_question)
+                yield scrapy.Request(request_url, headers=self.headers, meta={"question_id": question_id},
+                                     callback=self.parse_question)
+            else:
+                # 如果不是question页面则进行进一步跟踪
+                yield scrapy.Request(url, headers=self.headers, callback=self.parse)
 
     def parse_question(self, response):
         # 处理quetion页面
 
         if "QuestionHeader-title" in response.text:
-            #处理知乎新版本
-            item_load = ItemLoader(item=ZhihuQuestionItem(),response=response)
-            item_load.add_css("title",'QuestionHeader-title::text')
-            item_load.add_css("content",'QuestionHeader-detail')
-            item_load.add_value("url",response.url)
-            item_load.add_value("zhihu_id",response.meta.get("question_id"))
-            item_load.add_css("answer_num",'.List-headerText span::text')
-            item_load.add_css("comments_num",'.QuestionHeader-actions button::text')
-            item_load.add_css("watch_user_num",'.NumberBoard-value::text')
-            item_load.add_css("topics",'.QuestionHeader-topics .Popover::text')
+            # 处理知乎新版本
+            item_load = ItemLoader(item=ZhihuQuestionItem(), response=response)
+            item_load.add_css("title", 'QuestionHeader-title::text')
+            item_load.add_css("content", 'QuestionHeader-detail')
+            item_load.add_value("url", response.url)
+            question_id = response.meta.get("question_id")
+            item_load.add_value("zhihu_id", question_id)
+            item_load.add_css("answer_num", '.List-headerText span::text')
+            item_load.add_css("comments_num", '.QuestionHeader-actions button::text')
+            item_load.add_css("watch_user_num", '.NumberBoard-value::text')
+            item_load.add_css("topics", '.QuestionHeader-topics .Popover div::text')
             # item_load.add_css("click_num",'')
             # item_load.add_value("crawl_time",time.time.now())
             question_item = item_load.load_item()
         else:
-            #处理老版本
+            # 处理老版本
             item_load = ItemLoader(item=ZhihuQuestionItem(), response=response)
-            item_load.add_value("zhihu_id", response.meta.get("question_id"))
+            question_id = response.meta.get("question_id")
+            item_load.add_value("zhihu_id", question_id)
             item_load.add_value("url", response.url)
-            item_load.add_css("title", '.zh-question-title h2 a::text')
-            item_load.add_css("content",'#zh-question-detail')
-            item_load.add_css("answer_num",'#zh-question-answer-num::text')
-            item_load.add_css("comments_num",'#zh-question-meta-wrap a[name="addcomment"]::text')
-            item_load.add_css("watch_user_num",'#zh-question-side-header-wrap::text')
-            item_load.add_css("topics",'.zm-tag-editor-labels a::text')
+            # item_load.add_css("title", '.zh-question-title h2 a::text') #可能在span或者a标签里，但是css选择器无法实现或的选择改为xpath
+            item_load.add_xpath("title",
+                                '//*[@id="zh-question-title"]/h2/a/text()|//*[@id="zh-question-title"]/h2/span/text()')
+            item_load.add_css("content", '#zh-question-detail')
+            item_load.add_css("answer_num", '#zh-question-answer-num::text')
+            item_load.add_css("comments_num", '#zh-question-meta-wrap a[name="addcomment"]::text')
+            item_load.add_css("watch_user_num", '#zh-question-side-header-wrap::text')
+            # item_loader.add_xpath("watch_user_num",
+            item_load.add_xpath("watch_user_num",
+                                "//*[@id='zh-question-side-header-wrap']/text()|//*[@class='zh-question-followers-sidebar']/div/a/strong/text()")
+            item_load.add_css("topics", '.zm-tag-editor-labels a::text')
             question_item = item_load.load_item()
 
+        yield scrapy.Request(self.start_answer_url.format(question_id, 20, 0), headers=self.headers,
+                             callback=self.parse_answer)
+        yield question_item
 
+    def parse_answer(self, response):
+        answer_json = json.loads(response.text)
+        is_end = answer_json["paging"]["is_end"]
+        totals_answer = answer_json["paging"]["totals"]
+        next_url = answer_json["paging"]["next"]
+
+        for answer in answer_json["data"]:
+            load_item = ItemLoader(item=ZhihuAnswerItem())
+            load_item["zhihu_id"] = answer["id"]
+            load_item["url"] = answer["url"]
+            load_item["question_id"] = answer["question"]["id"]
+            load_item["author_id"] = answer["author"]["id"] if "id" in answer["author"] else None
+            load_item["content"] = answer["content"] if "content" in answer else None
+            load_item["parise_num"] = answer["voteup_count"]
+            load_item["comments_num"] = answer["comment_count"]
+            load_item["create_time"] = answer["created_time"]
+            load_item["update_time"] = answer["updated_time"]
+            load_item["crawl_time"] = datetime.datetime.now()
+            yield load_item
+        if not is_end:
+            yield scrapy.Request(next_url, headers=self.headers, callback=self.parse_answer)
 
     def get_captcha(self):
         import time
