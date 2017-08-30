@@ -42,7 +42,7 @@ class ZhihuSpider(scrapy.Spider):
             post_data = {
                 "_xsrf": xsrf,
                 "phone_num": "15995848840",
-                "password": "wenjuan123",
+                "password": input("请输入密码\n>>>>>>"),
                 "captcha": ""
             }
 
