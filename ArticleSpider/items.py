@@ -53,7 +53,7 @@ class JobboleItemLoader(ItemLoader):
 class JobboleItem(scrapy.Item):
     # items设计
     front_image_url = scrapy.Field(
-        output_processor=MapCompose(lambda x:x)
+        output_processor=MapCompose(lambda x: x)
     )
     front_image_path = scrapy.Field()
     url = scrapy.Field()
@@ -76,3 +76,28 @@ class JobboleItem(scrapy.Item):
         input_processor=MapCompose(remove_comment_tags),
         out_processor=Join(',')
     )
+
+
+class ZhihuQuestionItem(scrapy.Item):
+    zhihu_id = scrapy.Field()
+    topics = scrapy.Field()
+    url = scrapy.Field()
+    title = scrapy.Field()
+    content = scrapy.Field()
+    answer_num = scrapy.Field()
+    comments_num = scrapy.Field()
+    watch_user_num = scrapy.Field()
+    # click_num = scrapy.Field()
+    # crawl_time = scrapy.Field()
+
+class ZhihuAnswerItem(scrapy.Item):
+    zhihu_id = scrapy.Field()
+    url = scrapy.Field()
+    question_id = scrapy.Field()
+    author_id = scrapy.Field()
+    content = scrapy.Field()
+    parise_num = scrapy.Field()
+    comments_num = scrapy.Field()
+    create_time = scrapy.Field()
+    update_time = scrapy.Field()
+    crawl_time = scrapy.Field()

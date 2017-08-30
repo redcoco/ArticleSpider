@@ -3,12 +3,16 @@ import scrapy
 from scrapy import FormRequest
 import re
 import json
+from urllib.parse import urljoin
+from scrapy.loader import ItemLoader
+from ArticleSpider.items import ZhihuAnswerItem,ZhihuQuestionItem
+import time
 
 
 class ZhihuSpider(scrapy.Spider):
     name = 'zhihu'
     allowed_domains = ['www.zhihu.com']
-    start_urls = ['http://www.zhihu.com/']
+    start_urls = ['https://www.zhihu.com/']
 
     headers = {
         "HOST": "www.zhihu.com",
@@ -17,10 +21,51 @@ class ZhihuSpider(scrapy.Spider):
     }
 
     def parse(self, response):
-        pass
+        """
+        提取出html元素的所有url，并跟踪这些url进一步处理，如果url含有question
+        """
+        all_urls = response.css("a::attr(href)").extract()
+        all_urls = [urljoin(response.url, url) for url in all_urls]
+        all_urls = filter(lambda x: True if x.startswith("https") else False, all_urls)
+        for url in all_urls:
+            # if url.startswith("https")
+            match_obj = re.match("(.*zhihu.com/question/(\d+))(/|$).*", url)
+            if match_obj:
+                request_url = match_obj.group(1)
+                question_id = match_obj.group(2)
+                yield scrapy.Request(request_url, headers=self.headers, meta={"question_id":question_id},callback=self.parse_question)
 
-    def parse_detal(self, response):
-        pass
+    def parse_question(self, response):
+        # 处理quetion页面
+
+        if "QuestionHeader-title" in response.text:
+            #处理知乎新版本
+            item_load = ItemLoader(item=ZhihuQuestionItem(),response=response)
+            item_load.add_css("title",'QuestionHeader-title::text')
+            item_load.add_css("content",'QuestionHeader-detail')
+            item_load.add_value("url",response.url)
+            item_load.add_value("zhihu_id",response.meta.get("question_id"))
+            item_load.add_css("answer_num",'.List-headerText span::text')
+            item_load.add_css("comments_num",'.QuestionHeader-actions button::text')
+            item_load.add_css("watch_user_num",'.NumberBoard-value::text')
+            item_load.add_css("topics",'.QuestionHeader-topics .Popover::text')
+            # item_load.add_css("click_num",'')
+            # item_load.add_value("crawl_time",time.time.now())
+            question_item = item_load.load_item()
+        else:
+            #处理老版本
+            item_load = ItemLoader(item=ZhihuQuestionItem(), response=response)
+            item_load.add_value("zhihu_id", response.meta.get("question_id"))
+            item_load.add_value("url", response.url)
+            item_load.add_css("title", '.zh-question-title h2 a::text')
+            item_load.add_css("content",'#zh-question-detail')
+            item_load.add_css("answer_num",'#zh-question-answer-num::text')
+            item_load.add_css("comments_num",'#zh-question-meta-wrap a[name="addcomment"]::text')
+            item_load.add_css("watch_user_num",'#zh-question-side-header-wrap::text')
+            item_load.add_css("topics",'.zm-tag-editor-labels a::text')
+            question_item = item_load.load_item()
+
+
 
     def get_captcha(self):
         import time
@@ -42,7 +87,7 @@ class ZhihuSpider(scrapy.Spider):
             post_data = {
                 "_xsrf": xsrf,
                 "phone_num": "15995848840",
-                "password": "wenjuan123",
+                "password": input("请输入密码\n>>>>>>"),
                 "captcha": ""
             }
 
@@ -80,6 +125,6 @@ class ZhihuSpider(scrapy.Spider):
     def check_login(self, response):
         # 验证服务器的返回数据判断是否成功
         text_json = json.loads(response.text)
-        if "msg" in text_json and text_json["msg"] == "登陆成功":
+        if "msg" in text_json and text_json["msg"] == "登录成功":
             for url in self.start_urls:
-                yield scrapy.Request(url, dont_filter=True, headers=self.headers, callback=self.parse)
+                yield scrapy.Request(url, dont_filter=True, headers=self.headers)
