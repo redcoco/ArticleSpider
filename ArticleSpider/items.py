@@ -77,6 +77,13 @@ class JobboleItem(scrapy.Item):
         out_processor=Join(',')
     )
 
+    def get_insert_sql(self):
+        insert_sql = """
+        insert into jobbole (content,comment_nums,url) VALUES (%s,%s,%s,%s)
+        """
+        params = (self["url"][0], "".join(self["content"]), ",".join(self["tags"]), int(self["comment_nums"]))
+        return insert_sql, params
+
 
 class ZhihuQuestionItem(scrapy.Item):
     zhihu_id = scrapy.Field()
@@ -87,8 +94,19 @@ class ZhihuQuestionItem(scrapy.Item):
     answer_num = scrapy.Field()
     comments_num = scrapy.Field()
     watch_user_num = scrapy.Field()
+
     # click_num = scrapy.Field()
     # crawl_time = scrapy.Field()
+
+    def get_insert_sql(self):
+        insert_sql = """
+        insert into zhihu_question (zhihu_id,topics,url,title,content) VALUES (%s,%s,%s,%s)
+        """
+        params = (
+        self["zhihu_id"][0], "".join(self["title"]), "".join(self["topics"]), self["url"][0], "".join(self["content"]),
+        ",".join(self["tags"]), int(self["comment_nums"]))
+        return insert_sql, params
+
 
 class ZhihuAnswerItem(scrapy.Item):
     zhihu_id = scrapy.Field()
@@ -101,3 +119,12 @@ class ZhihuAnswerItem(scrapy.Item):
     create_time = scrapy.Field()
     update_time = scrapy.Field()
     crawl_time = scrapy.Field()
+
+    def get_insert_sql(self):
+        insert_sql = """
+        insert into zhihu_answer (zhihu_id,topics,url,title,content) VALUES (%s,%s,%s,%s)
+        """
+        params = (
+        self["zhihu_id"][0], "".join(self["title"]), "".join(self["topics"]), self["url"][0], "".join(self["content"]),
+        ",".join(self["tags"]), int(self["comment_nums"]))
+        return insert_sql, params

@@ -110,12 +110,14 @@ class MysqlTwistedPipeline(object):
         query.addErrback(self.handle_error, item, spider)
 
     def do_insert(self, cursor, item):
-        insert_sql = """
-                            insert into jobbole () VALUES (%s,%s,%s,%s)
-                            """
-        self.cursor.execute(insert_sql, (
-            item["title"], item["create_date"], item["fav_nums"], item["content"], item["tags"], item["comment_nums"],
-            item["praise_num"], item["front_image_url"]))
+        insert_sql,params = item.get_insert_sql()
+        self.cursor.execute(insert_sql,params)
+        # insert_sql = """
+        #                     insert into jobbole () VALUES (%s,%s,%s,%s)
+        #                     """
+        # self.cursor.execute(insert_sql, (
+        #     item["title"], item["create_date"], item["fav_nums"], item["content"], item["tags"], item["comment_nums"],
+        #     item["praise_num"], item["front_image_url"]))
 
     def handle_error(self, failure, item, spider):
         # 处理异步插入语的异常
