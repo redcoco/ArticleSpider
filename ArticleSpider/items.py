@@ -128,3 +128,27 @@ class ZhihuAnswerItem(scrapy.Item):
         self["zhihu_id"][0], "".join(self["title"]), "".join(self["topics"]), self["url"][0], "".join(self["content"]),
         ",".join(self["tags"]), int(self["comment_nums"]))
         return insert_sql, params
+
+class LagouItemLoader(ItemLoader):
+    # 自定义itemloader
+    default_output_processor = TakeFirst()  # 所有的字段取第一个
+
+
+class LagouJobItem(scrapy.Item):
+    title = scrapy.Field()
+    url = scrapy.Field()
+    url_object_id = scrapy.Field()
+    salary = scrapy.Field()
+    job_city = scrapy.Field()
+    work_years = scrapy.Field()
+    degree_need = scrapy.Field()
+    job_type = scrapy.Field()
+    publish_time = scrapy.Field()
+    job_advantage = scrapy.Field()
+    job_desc = scrapy.Field()
+    job_addr = scrapy.Field()
+    company_name = scrapy.Field()
+    company_url = scrapy.Field()
+    tags = scrapy.Field()
+    crawl_time = scrapy.Field()
+
