@@ -57,9 +57,10 @@ ROBOTSTXT_OBEY = False
 
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    'ArticleSpider.middlewares.MyCustomDownloaderMiddleware': 543,
-#}
+DOWNLOADER_MIDDLEWARES = {
+   'ArticleSpider.middlewares.RandomUserAgentMiddleware': 543,
+   'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+}
 
 # Enable or disable extensions
 # See http://scrapy.readthedocs.org/en/latest/topics/extensions.html
@@ -112,3 +113,8 @@ MYSQL_DBNAME = "test"
 MYSQL_USER = "root"
 MYSQL_PASSWORD = "toor"
 
+#user-agent列表
+# user_agent_list = []
+
+# 设置ua的类型
+RANDOM_UA_TYPE = "random"

@@ -8,7 +8,6 @@ from scrapy.loader import ItemLoader
 from ArticleSpider.items import ZhihuAnswerItem, ZhihuQuestionItem
 import datetime
 
-
 class ZhihuSpider(scrapy.Spider):
     name = 'zhihu'
     allowed_domains = ['www.zhihu.com']
@@ -21,6 +20,7 @@ class ZhihuSpider(scrapy.Spider):
         "HOST": "www.zhihu.com",
         "Referer": "https://www.zhihu.com",
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36"
+
     }
 
     def parse(self, response):
