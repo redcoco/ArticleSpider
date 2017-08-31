@@ -10,7 +10,7 @@ from scrapy.loader.processors import MapCompose, TakeFirst, Join
 import datetime
 from scrapy.loader import ItemLoader
 import re
-
+from w3lib.html import remove_tags
 
 class ArticlespiderItem(scrapy.Item):
     # define the fields for your item here like:
@@ -43,6 +43,10 @@ def remove_comment_tags(value):
 
 def return_orgin(value):
     return value
+
+def remove_splash(value):
+    # 去掉斜杠
+    return value.replace("/","")
 
 
 class JobboleItemLoader(ItemLoader):
@@ -133,22 +137,46 @@ class LagouItemLoader(ItemLoader):
     # 自定义itemloader
     default_output_processor = TakeFirst()  # 所有的字段取第一个
 
+def handle_jobaddr(value):
+    #去除查看地图 \n
+    addr_list = value.split("\n")
+    addr_list = [item.strip() for item in addr_list if item.strip()!="查看地图"]
+    return "".join(addr_list)
+
+
 
 class LagouJobItem(scrapy.Item):
     title = scrapy.Field()
     url = scrapy.Field()
     url_object_id = scrapy.Field()
     salary = scrapy.Field()
-    job_city = scrapy.Field()
-    work_years = scrapy.Field()
-    degree_need = scrapy.Field()
+    job_city = scrapy.Field(
+        input_processor=MapCompose(remove_splash),
+    )
+    work_years = scrapy.Field(
+        input_processor=MapCompose(remove_splash),
+    )
+    degree_need = scrapy.Field(
+        input_processor=MapCompose(remove_splash),
+    )
     job_type = scrapy.Field()
     publish_time = scrapy.Field()
     job_advantage = scrapy.Field()
     job_desc = scrapy.Field()
-    job_addr = scrapy.Field()
+    job_addr = scrapy.Field(
+        input_processor=MapCompose(remove_tags,handle_jobaddr),
+    )
     company_name = scrapy.Field()
     company_url = scrapy.Field()
-    tags = scrapy.Field()
+    tags = scrapy.Field(
+        input_processor=Join(","),
+    )
     crawl_time = scrapy.Field()
 
+    def get_insert_sql(self):
+        insert_sql = """
+        insert into lagou_job (url,title,job_addr,work_years,job_desc) VALUES (%s,%s,%s,%s)
+        """
+        params = (
+        self["url"][0], "".join(self["title"]), "".join(self["job_addr"]), self["work_years"][0], "".join(self["content"]))
+        return insert_sql, params
