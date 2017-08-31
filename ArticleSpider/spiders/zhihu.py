@@ -147,7 +147,7 @@ class ZhihuSpider(scrapy.Spider):
             im.show()
             im.close()
         except:
-            pass
+            print("图片打开失败\n")
         captcha = input("请输入验证码\n>>>>>>")
 
         post_url = "https://www.zhihu.com/login/phone_num"

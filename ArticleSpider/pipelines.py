@@ -112,6 +112,7 @@ class MysqlTwistedPipeline(object):
     def do_insert(self, cursor, item):
         insert_sql,params = item.get_insert_sql()
         self.cursor.execute(insert_sql,params)
+
         # insert_sql = """
         #                     insert into jobbole () VALUES (%s,%s,%s,%s)
         #                     """
