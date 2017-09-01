@@ -60,6 +60,8 @@ ROBOTSTXT_OBEY = False
 DOWNLOADER_MIDDLEWARES = {
    'ArticleSpider.middlewares.RandomUserAgentMiddleware': 543,
    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+   # 'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware':9,
+   # 'ArticleSpider.middlewares.RandomHttpProxyMiddleware':500,
 }
 
 # Enable or disable extensions

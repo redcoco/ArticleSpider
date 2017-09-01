@@ -7,7 +7,7 @@
 
 from scrapy import signals
 from fake_useragent import UserAgent
-
+import json
 
 class ArticlespiderSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
@@ -75,4 +75,18 @@ class RandomUserAgentMiddleware(object):
             return getattr(self.ua,self.ua_type) # 等同 ua.ua_type ua.random
         random_ua =  get_ua()
         request.headers.setdefault(b'User-Agent', get_ua())
+class RandomHttpProxyMiddleware(object):
+    def get_random_proxy(self):
+        with open('E:/downloads/ArticleSpider/tools/ips.txt', encoding="utf-8") as json_file:
+            ip_lists = json.load(json_file)
+        import random
+        ip_index = random.randint(0,len(ip_lists)-1)
+        ip_port = ip_lists[ip_index]
+        proxy = "{0}://{1}:{2}".format(ip_port[2].lower(),ip_port[0],ip_port[1])
+        return proxy
 
+
+    def process_request(self, request, spider):
+        request.meta["proxy"] = self.get_random_proxy()
+
+from scrapy.downloadermiddlewares.httpproxy import HttpProxyMiddleware
