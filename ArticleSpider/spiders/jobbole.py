@@ -18,7 +18,12 @@ class JobboleSpider(scrapy.Spider):
     name = 'jobbole'
     allowed_domains = ['blog.jobbole.com']
     start_urls = ['http://blog.jobbole.com/all-posts/page/550/']
+    # 用户自定义settings
+    custom_settings = {
+        "DOWNLOAD_DELAY":0.4,
+        "COOKIES_ENABLED":False,
 
+    }
     def parse(self, response):
 
         """
