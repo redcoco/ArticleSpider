@@ -11,7 +11,9 @@ from ArticleSpider.items import JobboleItemLoader
 from scrapy.utils.response import get_base_url
 from scrapy.utils.url import urljoin_rfc
 from urllib.parse import urljoin
-
+from selenium import webdriver
+from scrapy.xlib.pydispatch import dispatcher
+from scrapy import signals
 
 
 class JobboleSpider(scrapy.Spider):
@@ -24,6 +26,21 @@ class JobboleSpider(scrapy.Spider):
         "COOKIES_ENABLED":False,
 
     }
+
+    # 使用seleinum实现chrome请求
+    def __init__(self):
+        self.browser =  webdriver.Chrome(executable_path="C:/Users/wenjuan/PycharmProjects/chromedriver.exe")
+        super(JobboleSpider,self).__init__()
+        dispatcher.connect(self.spider_closed,signals.spider_closed)
+
+    def spider_closed(self,spider):
+        # 档爬虫关闭时，关闭浏览器
+        print("spider closed :jobbole")
+        self.browser.quit()
+
+
+
+
     def parse(self, response):
 
         """

@@ -89,4 +89,25 @@ class RandomHttpProxyMiddleware(object):
     def process_request(self, request, spider):
         request.meta["proxy"] = self.get_random_proxy()
 
-from scrapy.downloadermiddlewares.httpproxy import HttpProxyMiddleware
+
+
+from selenium import webdriver
+from scrapy.http import HtmlResponse
+class JSPageMiddleware(object):
+    # 集成selenium通过chrome请求动态网页
+    #  def __init__(self):
+    #      self.browser = webdriver.Chrome(executable_path="C:/Users/wenjuan/PycharmProjects/chromedriver.exe")
+    #      super(JSPageMiddleware,self).__init__()
+
+    def process_request(self,request,spider):
+        if spider.name == "jobbole":
+            # self.browser.get(request.url)
+            spider.browser.get(request.url)
+            import time
+            time.sleep(3)
+            print("访问:{0}".format(request.url))
+
+            return HtmlResponse(url=spider.browser.current_url,body=spider.browser.page_source,request=request,encoding="utf-8")
+
+
+

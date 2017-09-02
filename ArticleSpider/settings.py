@@ -62,6 +62,7 @@ DOWNLOADER_MIDDLEWARES = {
    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
    # 'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware':9,
    # 'ArticleSpider.middlewares.RandomHttpProxyMiddleware':500,
+    'ArticleSpider.middlewares.JSPageMiddleware':1,
 }
 
 # Enable or disable extensions

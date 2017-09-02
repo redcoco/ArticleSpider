@@ -3,6 +3,18 @@
 from selenium import webdriver
 import time
 
+# 设置chromdriver不加载图片
+# chrome_opt = webdriver.ChromeOptions()
+# prefs = {
+#     "profile.managed_default_content_settings.images":2
+#
+#          }
+# chrome_opt.add_experimental_option("prefs",prefs)
+# browser = webdriver.Chrome(executable_path="C:/Users/wenjuan/PycharmProjects/chromedriver.exe",chrome_options=chrome_opt)
+# browser.get("https://www.taobao.com")
+
+
+
 
 browser = webdriver.Chrome(executable_path="C:/Users/wenjuan/PycharmProjects/chromedriver.exe")
 
@@ -29,10 +41,17 @@ browser.find_element_by_css_selector(".info_list.password .W_input").send_keys(i
 browser.find_element_by_css_selector(".info_list.login_btn .W_btn_a.btn_32px ").click()
 
 # 实现模拟鼠标下拉滚动
-for i in range(3):
+for i in range(2):
     browser.execute_script("window.scrollTo(0, document.body.scrollHeight); var lenOfPage=document.body.scrollHeight; return lenOfPage;")
     time.sleep(3)
 
+
+
+
+#phantomjs, 无界面的浏览器， 多进程情况下phantomjs性能会下降很严重
+
+browser = webdriver.PhantomJS(executable_path="E:/home/phantomjs-2.1.1-windows/bin/phantomjs.exe")
+browser.get("https://detail.tmall.com/item.htm?spm=a230r.1.14.3.yYBVG6&id=538286972599&cm_id=140105335569ed55e27b&abbucket=15&sku_properties=10004:709990523;5919063:6536025")
 
 
 
