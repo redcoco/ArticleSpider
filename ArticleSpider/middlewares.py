@@ -105,9 +105,17 @@ class JSPageMiddleware(object):
             spider.browser.get(request.url)
             import time
             time.sleep(3)
+            from scrapy.log import logger
+            logger.info(msg="访问:{0}".format(request.url))
             print("访问:{0}".format(request.url))
 
             return HtmlResponse(url=spider.browser.current_url,body=spider.browser.page_source,request=request,encoding="utf-8")
 
 
+# 无界面chrome
+# from pyvirtualdisplay import Display
+# display = Display(visible=0,size=(800,600)) # 0 不可见
+# display.start()
+# browser = webdriver.Chrome()
+# browser.get()
 

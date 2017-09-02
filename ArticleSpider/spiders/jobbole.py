@@ -14,7 +14,7 @@ from urllib.parse import urljoin
 from selenium import webdriver
 from scrapy.xlib.pydispatch import dispatcher
 from scrapy import signals
-
+from scrapy.log import logger
 
 class JobboleSpider(scrapy.Spider):
     name = 'jobbole'
@@ -36,6 +36,7 @@ class JobboleSpider(scrapy.Spider):
     def spider_closed(self,spider):
         # 档爬虫关闭时，关闭浏览器
         print("spider closed :jobbole")
+        logger.info(msg="spider closed :jobbole")
         self.browser.quit()
 
 
