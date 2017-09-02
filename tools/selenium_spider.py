@@ -20,6 +20,22 @@ browser = webdriver.Chrome(executable_path="C:/Users/wenjuan/PycharmProjects/chr
 # browser.find_element_by_css_selector(".view-signin button.sign-button").click()
 # time.sleep(3)
 
+#selenium模拟登录微博， 模拟鼠标下拉
+
+browser.get("http://weibo.com/")
+time.sleep(4)
+browser.find_element_by_css_selector("#loginname").send_keys("liyao198705@sina.com")
+browser.find_element_by_css_selector(".info_list.password .W_input").send_keys(input("请输入密码：\n"))
+browser.find_element_by_css_selector(".info_list.login_btn .W_btn_a.btn_32px ").click()
+
+# 实现模拟鼠标下拉滚动
+for i in range(3):
+    browser.execute_script("window.scrollTo(0, document.body.scrollHeight); var lenOfPage=document.body.scrollHeight; return lenOfPage;")
+    time.sleep(3)
+
+
+
+
 page = browser.page_source
 
 # browser.quit()
