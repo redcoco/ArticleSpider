@@ -16,24 +16,27 @@ from scrapy.xlib.pydispatch import dispatcher
 from scrapy import signals
 from scrapy.log import logger
 
+
 class JobboleSpider(scrapy.Spider):
     name = 'jobbole'
     allowed_domains = ['blog.jobbole.com']
     start_urls = ['http://blog.jobbole.com/all-posts/page/550/']
     # 用户自定义settings
     custom_settings = {
-        "DOWNLOAD_DELAY":0.4,
-        "COOKIES_ENABLED":False,
+        "DOWNLOAD_DELAY": 0.4,
+        "COOKIES_ENABLED": False,
 
     }
 
     # 收集伯乐所有404的url及页面数量
     handle_httpstatus_list = [404]
+
     def __init__(self):
-        self.fail_urls = [] #因为status无法操作数组
-
-
-
+        self.fail_urls = []  # 因为status无法操作数组
+        dispatcher.connect(self.handle_spider_closed, signals.spider_closed)
+    # scrapy信号详解
+    def handle_spider_closed(self):
+        self.crawler.stats.set_value("spider_closed", datetime.datetime.now())
 
     # 使用seleinum实现chrome请求
     # def __init__(self):
@@ -60,7 +63,6 @@ class JobboleSpider(scrapy.Spider):
         if response.status == 404:
             self.fail_urls.append(response.url)
             self.crawler.stats.inc_value("failed_url")
-
 
         # 获取文章列表页的文章url并交给scrapy下载后进行解析
 
@@ -136,21 +138,21 @@ class JobboleSpider(scrapy.Spider):
         # jobbole_item["tags"] = tags
 
         # 通过itemloader加载item scrapy item loader机制
-        item_loader = JobboleItemLoader(item=JobboleItem(),response=response)
-        item_loader.add_css("title","div.entry-header h1::text")
+        item_loader = JobboleItemLoader(item=JobboleItem(), response=response)
+        item_loader.add_css("title", "div.entry-header h1::text")
         # item_loader.add_xpath()
-        item_loader.add_value("url",response.url)
+        item_loader.add_value("url", response.url)
         item_loader.add_value("url_object_id", get_md5(response.url))
-        front_image_url = response.meta.get("front_image_url","")
+        front_image_url = response.meta.get("front_image_url", "")
         if "http" not in front_image_url:
-            front_image_url = urljoin(get_base_url(response),front_image_url)
-        item_loader.add_value("front_image_url",[front_image_url])
-        item_loader.add_css("create_date","div.entry-meta p:nth-child(1)::text")
+            front_image_url = urljoin(get_base_url(response), front_image_url)
+        item_loader.add_value("front_image_url", [front_image_url])
+        item_loader.add_css("create_date", "div.entry-meta p:nth-child(1)::text")
         item_loader.add_css("praise_num", "div.post-adds span h10::text")
         item_loader.add_css("comment_nums", 'a[href*="#article-comment"] span::text')
         item_loader.add_css("fav_nums", 'span[class*="bookmark-btn"]::text')
         item_loader.add_css("tags", "p.entry-meta-hide-on-mobile a::text")
-        item_loader.add_css("content",'div.entry')
+        item_loader.add_css("content", 'div.entry')
 
         jobbole_item = item_loader.load_item()
 
