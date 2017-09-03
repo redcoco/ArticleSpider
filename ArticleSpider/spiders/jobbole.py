@@ -27,17 +27,25 @@ class JobboleSpider(scrapy.Spider):
 
     }
 
-    # 使用seleinum实现chrome请求
+    # 收集伯乐所有404的url及页面数量
+    handle_httpstatus_list = [404]
     def __init__(self):
-        self.browser =  webdriver.Chrome(executable_path="C:/Users/wenjuan/PycharmProjects/chromedriver.exe")
-        super(JobboleSpider,self).__init__()
-        dispatcher.connect(self.spider_closed,signals.spider_closed)
+        self.fail_urls = [] #因为status无法操作数组
 
-    def spider_closed(self,spider):
-        # 档爬虫关闭时，关闭浏览器
-        print("spider closed :jobbole")
-        logger.info(msg="spider closed :jobbole")
-        self.browser.quit()
+
+
+
+    # 使用seleinum实现chrome请求
+    # def __init__(self):
+    #     self.browser =  webdriver.Chrome(executable_path="C:/Users/wenjuan/PycharmProjects/chromedriver.exe")
+    #     super(JobboleSpider,self).__init__()
+    #     dispatcher.connect(self.spider_closed,signals.spider_closed)
+    #
+    # def spider_closed(self,spider):
+    #     # 档爬虫关闭时，关闭浏览器
+    #     print("spider closed :jobbole")
+    #     logger.info(msg="spider closed :jobbole")
+    #     self.browser.quit()
 
 
 
@@ -48,6 +56,11 @@ class JobboleSpider(scrapy.Spider):
         1.获取文章列表页的文章url并交给scrapy下载后进行解析
         2.获取下一页的url并交给scrapy进行下载，下载完成后交给parse解析
         """
+        # 数据收集
+        if response.status == 404:
+            self.fail_urls.append(response.url)
+            self.crawler.stats.inc_value("failed_url")
+
 
         # 获取文章列表页的文章url并交给scrapy下载后进行解析
 

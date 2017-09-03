@@ -12,3 +12,4 @@ execute(["scrapy","crawl","jobbole"])
 # execute(["scrapy","crawl","lagou"])
 # 如果出现错误： ImportError: No module named 'win32api'
 # 报错处理： pip install -i https://pypi.douban.com/simple pypiwin32
+
