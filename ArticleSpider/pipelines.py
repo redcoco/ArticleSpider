@@ -123,3 +123,35 @@ class MysqlTwistedPipeline(object):
     def handle_error(self, failure, item, spider):
         # 处理异步插入语的异常
         print(failure)
+
+
+from ArticleSpider.es_utils.es_types import ArticleType
+from w3lib.html import remove_tags
+class ElasticsearchPipeline(object):
+    """
+    将数据写入到es中
+    """
+    def process_item(self,item,spider):
+        # article = ArticleType()
+        # article.title = item["title"]
+        # article.create_date = item["create_date"]
+        # article.content = remove_tags(item["content"])
+        # article.front_image_url = item["front_image_url"]
+        # if "front_image_path" in item:
+        #     article.front_image_path = item["front_image_path"]
+        # if "praise_num" in item:
+        #     article.praise_num = item["praise_num"]
+        # if "fav_nums" in item:
+        #     article.fav_nums = item["fav_nums"]
+        # if "comment_nums" in item:
+        #     article.comment_nums = item["comment_nums"]
+        # article.url = item["url"]
+        # article.tags = item["tags"]
+        # article.meta.id = item["url_object_id"]
+        #
+        # article.save()
+
+        # 为了减少代码重复
+        item.save_to_es()
+
+        return item

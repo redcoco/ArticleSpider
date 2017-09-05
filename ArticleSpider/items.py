@@ -11,6 +11,8 @@ import datetime
 from scrapy.loader import ItemLoader
 import re
 from w3lib.html import remove_tags
+from ArticleSpider.es_utils.es_types import ArticleType
+from w3lib.html import remove_tags
 
 class ArticlespiderItem(scrapy.Item):
     # define the fields for your item here like:
@@ -87,6 +89,27 @@ class JobboleItem(scrapy.Item):
         """
         params = (self["url"][0], "".join(self["content"]), ",".join(self["tags"]), int(self["comment_nums"]))
         return insert_sql, params
+
+    #为了实现多item保存到es
+    def save_to_es(self):
+        article = ArticleType()
+        article.title = self["title"]
+        article.create_date = self["create_date"]
+        article.content = remove_tags(self["content"])
+        article.front_image_url = self["front_image_url"]
+        if "front_image_path" in self:
+            article.front_image_path = self["front_image_path"]
+        if "praise_num" in self:
+            article.praise_num = self["praise_num"]
+        if "fav_nums" in self:
+            article.fav_nums = self["fav_nums"]
+        if "comment_nums" in self:
+            article.comment_nums = self["comment_nums"]
+        article.url = self["url"]
+        article.tags = self["tags"]
+        article.meta.id = self["url_object_id"]
+        article.save()
+
 
 
 class ZhihuQuestionItem(scrapy.Item):

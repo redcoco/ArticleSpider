@@ -80,6 +80,8 @@ ITEM_PIPELINES = {
     'ArticleSpider.pipelines.JsonFilePipeline':2,
     'ArticleSpider.pipelines.JsonExporterPipeline':3,
     # 'ArticleSpider.pipelines.MysqlPipeline':4,
+    #将数据写入到es中
+    'ArticleSpider.pipelines.ElasticsearchPipeline':4,
 
 }
 IMAGES_URLS_FIELD="front_image_url"
