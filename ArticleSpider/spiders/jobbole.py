@@ -31,7 +31,7 @@ class JobboleSpider(scrapy.Spider):
     # 收集伯乐所有404的url及页面数量
     handle_httpstatus_list = [404]
 
-    def __init__(self):
+    def __init__(self,**kwargs):
         self.fail_urls = []  # 因为status无法操作数组
         dispatcher.connect(self.handle_spider_closed, signals.spider_closed)
     # scrapy信号详解
