@@ -14,6 +14,7 @@ from w3lib.html import remove_tags
 from ArticleSpider.es_utils.es_types import ArticleType
 from w3lib.html import remove_tags
 
+
 class ArticlespiderItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
@@ -46,9 +47,31 @@ def remove_comment_tags(value):
 def return_orgin(value):
     return value
 
+
 def remove_splash(value):
     # 去掉斜杠
-    return value.replace("/","")
+    return value.replace("/", "")
+
+
+from elasticsearch_dsl.connections import connections
+es = connections.create_connection(ArticleType._doc_type.using)
+
+
+def gen_suggests(index, info_tuple):
+    # 生成es搜索建议字段
+    used_words = set()
+    suggests = []
+    for text, weight in info_tuple:
+        if text:
+            # 调用es的analazyer分词
+            words = es.indices.analyze(index=index, analyzer="ik_max_word", params={"filter": ["lowercase"]},body=text)
+            analyzed_words = set([r["token"] for r in words["tokens"] if len(r["token"]) > 1])
+            new_words = analyzed_words - used_words
+        else:
+            new_words = set()
+        if new_words:
+            suggests.append({"input": list(new_words), "weight": weight})
+        return suggests
 
 
 class JobboleItemLoader(ItemLoader):
@@ -90,7 +113,7 @@ class JobboleItem(scrapy.Item):
         params = (self["url"][0], "".join(self["content"]), ",".join(self["tags"]), int(self["comment_nums"]))
         return insert_sql, params
 
-    #为了实现多item保存到es
+    # 为了实现多item保存到es
     def save_to_es(self):
         article = ArticleType()
         article.title = self["title"]
@@ -108,8 +131,10 @@ class JobboleItem(scrapy.Item):
         article.url = self["url"]
         article.tags = self["tags"]
         article.meta.id = self["url_object_id"]
-        article.save()
 
+        # 生成搜索建议词
+        article.suggest = gen_suggests(ArticleType._doc_type.index, ((article.title, 10), (article.tags, 7)))
+        article.save()
 
 
 class ZhihuQuestionItem(scrapy.Item):
@@ -130,8 +155,9 @@ class ZhihuQuestionItem(scrapy.Item):
         insert into zhihu_question (zhihu_id,topics,url,title,content) VALUES (%s,%s,%s,%s)
         """
         params = (
-        self["zhihu_id"][0], "".join(self["title"]), "".join(self["topics"]), self["url"][0], "".join(self["content"]),
-        ",".join(self["tags"]), int(self["comment_nums"]))
+            self["zhihu_id"][0], "".join(self["title"]), "".join(self["topics"]), self["url"][0],
+            "".join(self["content"]),
+            ",".join(self["tags"]), int(self["comment_nums"]))
         return insert_sql, params
 
 
@@ -152,20 +178,22 @@ class ZhihuAnswerItem(scrapy.Item):
         insert into zhihu_answer (zhihu_id,topics,url,title,content) VALUES (%s,%s,%s,%s)
         """
         params = (
-        self["zhihu_id"][0], "".join(self["title"]), "".join(self["topics"]), self["url"][0], "".join(self["content"]),
-        ",".join(self["tags"]), int(self["comment_nums"]))
+            self["zhihu_id"][0], "".join(self["title"]), "".join(self["topics"]), self["url"][0],
+            "".join(self["content"]),
+            ",".join(self["tags"]), int(self["comment_nums"]))
         return insert_sql, params
+
 
 class LagouItemLoader(ItemLoader):
     # 自定义itemloader
     default_output_processor = TakeFirst()  # 所有的字段取第一个
 
-def handle_jobaddr(value):
-    #去除查看地图 \n
-    addr_list = value.split("\n")
-    addr_list = [item.strip() for item in addr_list if item.strip()!="查看地图"]
-    return "".join(addr_list)
 
+def handle_jobaddr(value):
+    # 去除查看地图 \n
+    addr_list = value.split("\n")
+    addr_list = [item.strip() for item in addr_list if item.strip() != "查看地图"]
+    return "".join(addr_list)
 
 
 class LagouJobItem(scrapy.Item):
@@ -187,7 +215,7 @@ class LagouJobItem(scrapy.Item):
     job_advantage = scrapy.Field()
     job_desc = scrapy.Field()
     job_addr = scrapy.Field(
-        input_processor=MapCompose(remove_tags,handle_jobaddr),
+        input_processor=MapCompose(remove_tags, handle_jobaddr),
     )
     company_name = scrapy.Field()
     company_url = scrapy.Field()
@@ -201,5 +229,6 @@ class LagouJobItem(scrapy.Item):
         insert into lagou_job (url,title,job_addr,work_years,job_desc) VALUES (%s,%s,%s,%s)
         """
         params = (
-        self["url"][0], "".join(self["title"]), "".join(self["job_addr"]), self["work_years"][0], "".join(self["content"]))
+            self["url"][0], "".join(self["title"]), "".join(self["job_addr"]), self["work_years"][0],
+            "".join(self["content"]))
         return insert_sql, params
